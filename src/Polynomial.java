@@ -1,7 +1,4 @@
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collector;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -13,6 +10,7 @@ public final class Polynomial {
      * Класс для работы с целочисленными полиномами
      *
      * Public методы:
+     * getExp - возвращает старшую степень полинома.
      * getCoeff - возвращает коэффициент при произвольноый степени.
      * setCoeff - задаёт коэффициент при произвольной степени.
      * plus - Сложение двух полиномов.
@@ -23,23 +21,39 @@ public final class Polynomial {
      * (?) mod - Остаток от деления одного полинома на другой.
      * value - Расчёт значения полинома при данном целом 'x'.
      * equal - Сравнение двух полиномов на равенство.
+     *
+     * Private методы:
+     * universalDiv - метод, вызываемый методами div и mod.
      */
-    private Map <Integer, Integer> coeff;// ассоциативный массив: степень x — коэффициент
-    private int higherExp; // старшая степень полинома
-    private int lowerExp; // младшая степень полинома
 
-    public Polynomial(int[] coeff, int lowerExp, int higherExp) {
-        // Конструктор. Создаёт hashmap из передаваемого map`а
+    private Map <Integer, Integer> coeff; // ассоциативный массив: степень x — коэффициент
+
+    public Polynomial(int[] coeff) {
+        // Конструктор: получает на вход массив из коэффициентов при x; обрезает нули после старшей степени (если есть).
         this.coeff = new HashMap<>();
-        for (int i = lowerExp, j = 0; i <= higherExp ; i++, j++) {
-            this.coeff.put(i, coeff[j]);
+        int firstNotNull;
+        for (firstNotNull = coeff.length - 1; firstNotNull >= 0; firstNotNull--) {
+            if (coeff[firstNotNull] != 0) break;
         }
-        this.higherExp = higherExp;
-        this.lowerExp = lowerExp;
+        for (int i = 0; i <= firstNotNull ; i++) {
+            this.coeff.put(i, coeff[i]);
+        }
+    }
+
+    //Конструктор клонирования
+    private Polynomial(Polynomial other) {
+        for (Map.Entry<Integer, Integer> entry: other.coeff.entrySet()) {
+            this.coeff.put(entry.getKey(), entry.getValue());
+        }
+    }
+
+    public  int getExp() {
+        //Геттер, возвращает старшую степень полинома.
+        return coeff.size()-1;
     }
 
     public int getCoeff(int exp) {
-        // Геттер, возвращает коэффициент при нужной степени x. Если член с такой степенью отсутствует, вернёт ноль
+        // Геттер, возвращает коэффициент при нужной степени x. Если член с такой степенью отсутствует, вернёт ноль.
         return (coeff.containsKey(exp)) ? coeff.get(exp) : 0;
     }
 
@@ -49,25 +63,28 @@ public final class Polynomial {
     }
 
     public Polynomial plus (Polynomial other) {
-        // Сложение двух полиномов
-        int lower = Math.min(this.lowerExp, other.lowerExp);
-        int higher = Math.max(this.higherExp, other.higherExp);
-        int[] coeff = new int[higher - lower + 1];
+        // Сложение двух полиномов.
+        //int lower = Math.min(this.coeff.size()-1, other.coeff.size()-1);
+        int lower = 0;
+        int higher = Math.max(this.coeff.size()-1, other.coeff.size()-1);
+        int[] coeff = new int[higher + 1];
         for (int j= 0, i = lower; i <= higher; i++, j++) {
             coeff[j] = this.getCoeff(i) + other.getCoeff(i);
         }
-        return new Polynomial(coeff, lower, higher);
+        return new Polynomial(coeff);
     }
 
+
     public Polynomial unaryMinus() {
-        // Меняет значение полинома на противоположное по знаку
-        Polynomial p = new Polynomial(new int[higherExp - lowerExp + 1],lowerExp, higherExp);
-        p.coeff = new HashMap<>();
-        p.coeff.putAll(this.coeff);
-        for (Map.Entry<Integer, Integer> entry : p.coeff.entrySet()) {
-            p.coeff.put(entry.getKey(), entry.getValue() * -1);
-        }
-        return p;
+        /* Решение через конструктнор копирования
+        Polynomial newPoly =  new Polynomial(this);
+        newPoly.coeff = newPoly.coeff.entrySet().stream().
+                collect(Collectors.toMap(E -> E.getKey(), E -> -E.getValue()));
+        return newPoly;
+        */
+
+        //Решение через обычный конструктор с пересчетом коэффициентов перед передачей
+        return new Polynomial(this.coeff.entrySet().stream().mapToInt(E -> -E.getValue()).toArray());
     }
 
     public  Polynomial minus(Polynomial other) {
@@ -77,41 +94,42 @@ public final class Polynomial {
 
     public  Polynomial multiply(Polynomial other) {
         // Умножение двух полиномов
-        int lower = this.lowerExp + other.lowerExp;
-        int higher = this.higherExp + other.higherExp;
-        int[] coeff = new int[higher - lower + 1];
-        for (int j = 0, i = this.lowerExp; i <= this.higherExp; i++, j++) {
-            for (int k = 0, l = other.lowerExp; l <= other.higherExp; l++, k++){
+        int higher = this.coeff.size()-1 + other.coeff.size()-1;
+        int[] coeff = new int[higher + 1];
+        for (int j = 0, i = 0; i <= this.coeff.size()-1; i++, j++) {
+            for (int k = 0, l = 0; l <= other.coeff.size()-1; l++, k++){
                 coeff[j+k] += this.getCoeff(i) * other.getCoeff(l);
             }
         }
-        return new Polynomial(coeff, lower, higher);
+        return new Polynomial(coeff);
     }
 
-    private Polynomial universalDiv(Polynomial other, boolean excess) {
+    //private Polynomial universalDiv(Polynomial other, boolean excess) {
         // Внутренний метод, возвращает целую часть или остаток от деления в зависимости от булевого аргумента на входе
-        int lower = this.lowerExp - other.higherExp;
-        int higher = this.higherExp - other.lowerExp;
-        int[] coeff = new int[higher - lower + 1];
-        int[] excessCoeff = new int[higher - lower + 1];
-        return (excess) ? new Polynomial(excessCoeff, lower, higher) : new Polynomial(coeff, lower, higher);
-    }
+        //int lower = this.lowerExp - other.higherExp;
+        //int higher = this.higherExp - other.lowerExp;
+        //int[] coeff = new int[higher - lower + 1];
+        //int[] excessCoeff = new int[higher - lower + 1];
+        //return (excess) ? new Polynomial(excessCoeff, lower, higher) : new Polynomial(coeff, lower, higher);
+    //}
 
-    public Polynomial div(Polynomial other) {
+    //public Polynomial div(Polynomial other) {
         // Деление нацело одного полинома на другой
-        return universalDiv(other, false);
-    }
+        //return universalDiv(other, false);
+    //}
 
-    public Polynomial mod(Polynomial other) {
+    //public Polynomial mod(Polynomial other) {
         // Остаток от деления одного полинома на другой
-        return universalDiv(other, true);
-    }
+        //return universalDiv(other, true);
+    //}
 
     public int evaluate(int x) {
         // Возвращает значение полинома при данном x
         int value = 0;
-        for (int i = higherExp; i >= 0; i--) value = this.getCoeff(i) + (x * value);
-            return value;
+        for (int i = coeff.size(); i >= 0; i--) {
+            value = this.getCoeff(i) + (x * value);
+        }
+        return value;
     }
 
     // Переопределение стандартных функций класса Object:
@@ -119,8 +137,8 @@ public final class Polynomial {
     public boolean equals(Object obj) {
         if (obj instanceof Polynomial) {
             Polynomial otherPolynomial = (Polynomial) obj;
-            if (this.higherExp != otherPolynomial.higherExp) return false;
-            for (int i = this.higherExp; i >= 0; i--){
+            if (this.coeff.size()-1 != otherPolynomial.coeff.size()-1) return false;
+            for (int i = this.coeff.size()-1; i >= 0; i--){
                 if (this.getCoeff(i) != otherPolynomial.getCoeff(i)) return false;
             }
             return true;
@@ -128,11 +146,17 @@ public final class Polynomial {
         else return false;
     }
 
-    //@Override
-    //public int hashCode() {}
+    @Override
+    public int hashCode() {
+        return 31 * coeff.size() + coeff.hashCode();
+    }
 
     @Override
     public String toString() {
-        return coeff.entrySet().stream().map(entry -> entry.getValue()+"x^"+entry.getKey()).collect(Collectors.joining("+"));
+        List<Map.Entry<Integer, Integer>> set = new ArrayList<>(coeff.entrySet());
+        Collections.reverse(set);
+        return set.stream().filter(E -> E.getValue() != 0)
+                .map(entry -> entry.getValue()+"x^"+entry.getKey())
+                .collect(Collectors.joining("+"));
     }
 }
