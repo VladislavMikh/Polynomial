@@ -10,17 +10,19 @@ public final class Polynomial {
      * Класс для работы с целочисленными полиномами
      *
      * Public методы:
-     * getExp - возвращает старшую степень полинома.
-     * getCoeff - возвращает коэффициент при произвольноый степени.
-     * setCoeff - задаёт коэффициент при произвольной степени.
+     * getExp - Возвращает старшую степень полинома.
+     * getCoeff - Возвращает коэффициент при произвольноый степени.
+     * setCoeff - Задаёт коэффициент при произвольной степени.
      * plus - Сложение двух полиномов.
      * unaryMinus - Обратное значение полинома (умножение полинома на -1).
      * minus - Вычитание двух полиномов.
      * multiply - Умножение двух полиномов.
-     * (?) div - Деление двух полиномов нацело.
-     * (?) mod - Остаток от деления одного полинома на другой.
+     * div - Деление двух полиномов нацело.
+     * mod - Остаток от деления одного полинома на другой.
      * value - Расчёт значения полинома при данном целом 'x'.
-     * equal - Сравнение двух полиномов на равенство.
+     * equals - Сравнение двух полиномов на равенство.
+     * hashCode;
+     * toString;
      *
      * Private методы:
      * universalDiv - метод, вызываемый методами div и mod.
@@ -28,8 +30,8 @@ public final class Polynomial {
 
     private Map <Integer, Integer> coeff; // ассоциативный массив: степень x — коэффициент
 
+    // Конструктор: получает на вход массив из коэффициентов при x; обрезает нули после старшей степени (если есть)
     public Polynomial(int[] coeff) {
-        // Конструктор: получает на вход массив из коэффициентов при x; обрезает нули после старшей степени (если есть).
         this.coeff = new HashMap<>();
         int firstNotNull;
         for (firstNotNull = coeff.length - 1; firstNotNull >= 0; firstNotNull--) {
@@ -40,31 +42,30 @@ public final class Polynomial {
         }
     }
 
-    //Конструктор клонирования
+    //Конструктор клонирования:
     private Polynomial(Polynomial other) {
         for (Map.Entry<Integer, Integer> entry: other.coeff.entrySet()) {
             this.coeff.put(entry.getKey(), entry.getValue());
         }
     }
 
+    //Геттер, возвращает старшую степень полинома:
     public  int getExp() {
-        //Геттер, возвращает старшую степень полинома.
         return coeff.size()-1;
     }
 
+    // Геттер, возвращает коэффициент при нужной степени x. Если член с такой степенью отсутствует, вернёт ноль:
     public int getCoeff(int exp) {
-        // Геттер, возвращает коэффициент при нужной степени x. Если член с такой степенью отсутствует, вернёт ноль.
         return (coeff.containsKey(exp)) ? coeff.get(exp) : 0;
     }
 
+    // Сеттер, позволяет изменить коэффициент при нужной степени x:
     public void setCoeff(int exp, int value) {
-        // Сеттер, позволяет изменить коэффициент при нужной степени x.
         coeff.put(exp, value);
     }
 
-    public Polynomial plus (Polynomial other) {
-        // Сложение двух полиномов.
-        //int lower = Math.min(this.coeff.size()-1, other.coeff.size()-1);
+    // Сложение двух полиномов:
+    public Polynomial plus(Polynomial other) {
         int lower = 0;
         int higher = Math.max(this.coeff.size()-1, other.coeff.size()-1);
         int[] coeff = new int[higher + 1];
@@ -73,7 +74,6 @@ public final class Polynomial {
         }
         return new Polynomial(coeff);
     }
-
 
     public Polynomial unaryMinus() {
         /* Решение через конструктнор копирования
@@ -84,16 +84,22 @@ public final class Polynomial {
         */
 
         //Решение через обычный конструктор с пересчетом коэффициентов перед передачей
+         //Map <Integer, Integer> newCoeffs; //.filter coeff.entrySet().stream().mapToInt(E -> -E.getValue()).toArray()
         return new Polynomial(this.coeff.entrySet().stream().mapToInt(E -> -E.getValue()).toArray());
+        // Передается во владение новому объекту, конструктор выше
+        //newCoeffs = null; //говорит о том, что ссылку больше не используется нигде, кроме как для создания нового объекта
+       // Map <Integer, Integer> newCoeff = new HashMap<Integer, Integer>();
+       // return newCoeff.entrySet().stream().filter(); ??
+
     }
 
+    // Разность двух полиномов:
     public  Polynomial minus(Polynomial other) {
-        // Разность двух полиномов
         return plus(other.unaryMinus());
     }
 
+    // Умножение двух полиномов:
     public  Polynomial multiply(Polynomial other) {
-        // Умножение двух полиномов
         int higher = this.coeff.size()-1 + other.coeff.size()-1;
         int[] coeff = new int[higher + 1];
         for (int j = 0, i = 0; i <= this.coeff.size()-1; i++, j++) {
@@ -104,27 +110,48 @@ public final class Polynomial {
         return new Polynomial(coeff);
     }
 
-    //private Polynomial universalDiv(Polynomial other, boolean excess) {
-        // Внутренний метод, возвращает целую часть или остаток от деления в зависимости от булевого аргумента на входе
-        //int lower = this.lowerExp - other.higherExp;
-        //int higher = this.higherExp - other.lowerExp;
-        //int[] coeff = new int[higher - lower + 1];
-        //int[] excessCoeff = new int[higher - lower + 1];
-        //return (excess) ? new Polynomial(excessCoeff, lower, higher) : new Polynomial(coeff, lower, higher);
-    //}
+    // Внутренний метод, через него работают методы div и mod:
+    private Polynomial universalDiv(Polynomial other, boolean needExcess) {
 
-    //public Polynomial div(Polynomial other) {
-        // Деление нацело одного полинома на другой
-        //return universalDiv(other, false);
-    //}
+        if (other.getExp() == 0 && other.getCoeff(0) == 0) {
+            throw new ArithmeticException("Деление на ноль невозможно");
+        }
 
-    //public Polynomial mod(Polynomial other) {
-        // Остаток от деления одного полинома на другой
-        //return universalDiv(other, true);
-    //}
+        Polynomial dividend = new Polynomial(this); // - делимое
+        final Polynomial divisor = new Polynomial(other); //  - делитель
+        Polynomial quotient = new Polynomial(new int[]{0}); // - частное
+        Polynomial temp; // - произведение делителя и текущего (неокончательного) значения частного
+        Polynomial excess = dividend; // - остаток, по умолчанию равен делимому, т.к.:
 
+        if (this.getExp() < other.getExp()) {
+            return (needExcess) ? excess: new Polynomial(new int[] {0}); // (x^2 mod x^3 = x^2); (x^2 div x^3 = 0).
+        }
+
+        int currentExp = dividend.getExp() - divisor.getExp(); // - текущая степень частного
+        int[] x = new int[currentExp + 1];
+        while (currentExp >= 0) { // пока степень делимого больше степени делителя:
+            int currentCoeff = dividend.getCoeff(currentExp) / divisor.getCoeff(currentExp);
+            x[currentExp] = currentCoeff;
+            quotient.plus(new Polynomial(x)); //  Прибавление к частному нового одночлена
+            temp = divisor.multiply(quotient);
+            excess = dividend.minus(temp);
+            currentExp--;
+        }
+        return (needExcess) ? excess : quotient;
+    }
+
+    //Деление нацело одного полинома на другой:
+    public Polynomial div(Polynomial other) {
+        return universalDiv(other, false);
+    }
+
+    // Остаток от деления одного полинома на другой:
+    public Polynomial mod(Polynomial other) {
+        return universalDiv(other, true);
+    }
+
+    // Возвращает значение полинома при данном x:
     public int evaluate(int x) {
-        // Возвращает значение полинома при данном x
         int value = 0;
         for (int i = coeff.size(); i >= 0; i--) {
             value = this.getCoeff(i) + (x * value);

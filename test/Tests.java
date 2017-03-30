@@ -53,21 +53,21 @@ public class Tests {
         assertEquals(expected,inputOne.multiply(inputTwo));
     }
 
-//    @Test
-//    public void testDiv() {
-//        Polynomial dividend = new Polynomial(new int[] {1,0,2}),
-//                   divider = new Polynomial(new int[] {0,1}),
-//                   expected = new Polynomial(new int[] {0,2});
-//        assertEquals(expected,dividend.div(divider));
-//    }
+    @Test
+    public void testDiv() {
+        Polynomial dividend = new Polynomial(new int[] {1,0,2}),
+                   divider = new Polynomial(new int[] {0,1}),
+                   expected = new Polynomial(new int[] {0,2});
+        assertEquals(expected,dividend.div(divider));
+    }
 
-    //@Test
-    //public void testMod() {
-        //Polynomial dividend = new Polynomial(new int[] {1,0,2}),
-        // divider = new Polynomial(new int[] {0,1}),
-        //expected = new Polynomial(new int[] {1});
-        //assertEquals(expected,dividend.mod(divider));
-    //}
+    @Test
+    public void testMod() {
+        Polynomial dividend = new Polynomial(new int[] {1,0,2}),
+         divider = new Polynomial(new int[] {0,1}),
+        expected = new Polynomial(new int[] {1});
+        assertEquals(expected,dividend.mod(divider));
+    }
 
     @Test
     public void testEvaluate() {
