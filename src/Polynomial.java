@@ -44,10 +44,24 @@ public final class Polynomial {
 
     //Конструктор клонирования:
     private Polynomial(Polynomial other) {
+        this.coeff = new HashMap<Integer,Integer>();
         for (Map.Entry<Integer, Integer> entry: other.coeff.entrySet()) {
             this.coeff.put(entry.getKey(), entry.getValue());
         }
     }
+
+    //Конструктор клонирования:
+    //private Polynomial(Polynomial other) {
+      //  this.coeff = new HashMap<>();
+        //int[] coeff = other.coeff.entrySet().stream().mapToInt(E -> E.getValue()).toArray();
+        //int firstNotNull;
+        //for (firstNotNull = coeff.length - 1; firstNotNull >= 0; firstNotNull--) { // убирает возможные нули в начале
+        //if (coeff[firstNotNull] != 0) break;
+        //}
+        //for (int i = 0; i <= firstNotNull ; i++) {
+        //   this.coeff.put(i, coeff[i]);
+        //}
+    //}
 
     //Геттер, возвращает старшую степень полинома:
     public  int getExp() {
@@ -67,7 +81,7 @@ public final class Polynomial {
     // Сложение двух полиномов:
     public Polynomial plus(Polynomial other) {
         int lower = 0;
-        int higher = Math.max(this.coeff.size()-1, other.coeff.size()-1);
+        int higher = Math.max(this.getExp(), other.getExp());
         int[] coeff = new int[higher + 1];
         for (int j= 0, i = lower; i <= higher; i++, j++) {
             coeff[j] = this.getCoeff(i) + other.getCoeff(i);
@@ -100,10 +114,10 @@ public final class Polynomial {
 
     // Умножение двух полиномов:
     public  Polynomial multiply(Polynomial other) {
-        int higher = this.coeff.size()-1 + other.coeff.size()-1;
+        int higher = this.getExp() + other.getExp();
         int[] coeff = new int[higher + 1];
-        for (int j = 0, i = 0; i <= this.coeff.size()-1; i++, j++) {
-            for (int k = 0, l = 0; l <= other.coeff.size()-1; l++, k++){
+        for (int j = 0, i = 0; i <= this.getExp(); i++, j++) {
+            for (int k = 0, l = 0; l <= other.getExp(); l++, k++){
                 coeff[j+k] += this.getCoeff(i) * other.getCoeff(l);
             }
         }
@@ -130,7 +144,7 @@ public final class Polynomial {
         int currentExp = dividend.getExp() - divisor.getExp(); // - текущая степень частного
         int[] x = new int[currentExp + 1];
         while (currentExp >= 0) { // пока степень делимого больше степени делителя:
-            int currentCoeff = dividend.getCoeff(currentExp) / divisor.getCoeff(currentExp);
+            int currentCoeff = dividend.getCoeff(currentExp) / divisor.getCoeff(currentExp); // делит на ноль
             x[currentExp] = currentCoeff;
             quotient.plus(new Polynomial(x)); //  Прибавление к частному нового одночлена
             temp = divisor.multiply(quotient);
@@ -164,8 +178,8 @@ public final class Polynomial {
     public boolean equals(Object obj) {
         if (obj instanceof Polynomial) {
             Polynomial otherPolynomial = (Polynomial) obj;
-            if (this.coeff.size()-1 != otherPolynomial.coeff.size()-1) return false;
-            for (int i = this.coeff.size()-1; i >= 0; i--){
+            if (this.getExp() != otherPolynomial.getExp()) return false;
+            for (int i = this.getExp(); i >= 0; i--){
                 if (this.getCoeff(i) != otherPolynomial.getCoeff(i)) return false;
             }
             return true;
